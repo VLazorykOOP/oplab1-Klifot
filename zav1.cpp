@@ -1,169 +1,175 @@
 #include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
 #include <cmath>
+#include <fstream>
+#include <string>
 #include <algorithm>
-#include <map>
+#include <exception>
 
 using namespace std;
 
-// Читання таблиці з файлу
-vector<pair<double, double>> readTable(const string& fileName) {
-    vector<pair<double, double>> data;
-    ifstream file(fileName);
-    if (!file.is_open()) {
-        cerr << "Cannot open file " << fileName << endl;
-        return data;
-    }
-    double x, y;
-    while (file >> x >> y) {
-        data.emplace_back(x, y);
-    }
-    file.close();
-    return data;
+// Функція Variant
+double Variant(double r, double k) {
+    return 0.8973 * r + 0.1027 * k;
 }
 
-// Читання таблиці text-value
-map<string, double> readTextTable(const string& fileName) {
-    map<string, double> data;
-    ifstream file(fileName);
-    if (!file.is_open()) {
-        cerr << "Cannot open file " << fileName << endl;
-        return data;
+// Функція Qgn
+double Qgn(double x, double y) {
+    return log(1 + abs(x - y)) * (pow(sin(x), 2) + pow(cos(y), 2));
+}
+
+// Функція Qnk
+double Qnk(double x, double y) {
+    return Qgn(x, y - x) + Qgn(y, x - y);
+}
+
+// Функція Rnk
+double Rnk(double x, double y) {
+    return x * Qnk(x, y) + y * Qnk(y, x);
+}
+
+// Функція U
+double U(double x) {
+    return pow(sin(x), 2) - pow(cos(x), 2);
+}
+
+// Функція T
+double T(double x) {
+    return pow(x, 2) - x + 1;
+}
+
+// Функція Max
+double Max(double x, double y, double z) {
+    return max({ x, y, z });
+}
+
+// Функція RText
+double RText(double x, double y, double z, string text) {
+    if (text.empty()) {
+        return x + y + z;
     }
+    else {
+        return x * y * z;
+    }
+}
+
+// Функція CText
+double CText(double x, double y, double z, double u, string text) {
+    return Max(x, y, z) + u + text.length();
+}
+
+// Функція func
+double func(double x, double y, double z) {
+    return Rnk(x, y) + Rnk(y, z) * Rnk(x, y);
+}
+
+// Функція Gtext
+double Gtext(string action) {
+    if (action == "set") {
+        return 1;
+    }
+    else if (action == "get") {
+        return 2;
+    }
+    return 0;
+}
+
+// Функція для обчислення CText
+double CText(double x, double y, double z, string text) {
+    if (text.empty()) {
+        return Gtext("set") + Gtext("get") - x * y;
+    }
+    else {
+        return Gtext("set") + Gtext(text) + z;
+    }
+}
+
+// Алгоритм 2: функція Rnk2
+double Rnk2(double x, double y) {
+    return x * Qnk(x, y) + y * Qnk(y, x) - 0.03 * Qnk(x, y) + 0.12 * Qnk(x, y) * y;
+}
+
+// Алгоритм 2: функція Qnk2
+double Qnk2(double x, double y) {
+    return 1.1 * Qgn(x, y - x) + 0.9 * Qgn(y, x - y) + Qnk(x, y);
+}
+
+// Алгоритм 2: функція U1
+double U1(double x) {
+    return 2 * pow(sin(x), 2);
+}
+
+// Алгоритм 2: функція U2
+double U2(double x) {
+    return pow(cos(x), 2);
+}
+
+// Алгоритм 2: функція U2 з двома аргументами
+double U2(double x, double y) {
+    return (U1(x) + y * T(y) - U2(y) * T(x)) / (U1(x) + T(x));
+}
+
+// Головна функція
+int main() {
+    // Ініціалізація змінних
+    double x, y, z, r, k;
     string text;
-    double value;
-    while (file >> text >> value) {
-        data[text] = value;
-    }
-    file.close();
-    return data;
-}
 
-// Інтерполяція значень
-double interpolate(double x, const vector<pair<double, double>>& data) {
-    for (size_t i = 0; i < data.size() - 1; ++i) {
-        if (x >= data[i].first && x <= data[i + 1].first) {
-            double t = (x - data[i].first) / (data[i + 1].first - data[i].first);
-            return (1 - t) * data[i].second + t * data[i + 1].second;
+    // Введення змінних
+    cin >> x >> y >> z >> text;
+
+    // Відкриття файлів
+    ifstream dat1, dat2, dat3;
+
+    // Обробка файлу dat1.dat
+    try {
+        dat1.open("dat1.dat");
+        if (!dat1.is_open()) throw runtime_error("Could not open dat1.dat");
+
+        double dat1_x, dat1_y;
+        while (dat1 >> dat1_x >> dat1_y) {
+            double temp = Rnk(dat1_x, dat1_y);
+            cout << "Обробка з dat1.dat, Rnk: " << temp << endl;
         }
     }
-    return 0;
-}
-
-double U(double x, const vector<pair<double, double>>& data) {
-    return interpolate(x, data);
-}
-
-double T(double x, const vector<pair<double, double>>& data) {
-    return interpolate(x, data);
-}
-
-double G(const string& text, const map<string, double>& data) {
-    if (text.empty()) return 0;
-    if (data.find(text) != data.end()) {
-        return data.at(text);
-    }
-    return 0;
-}
-
-double Max(double a, double b, double c, double d) {
-    return max(max(a, b), max(c, d));
-}
-
-// Обчислення R(x, y) за алгоритмом 2
-double Rnk2(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
-    return x * y + U(x, uData) * T(y, tData);
-}
-
-// Алгоритм 2
-double Qnk1(double x, double y) {
-    return x * y;
-}
-
-double Qqn1(double x, double y) {
-    return x - y;
-}
-
-double Qnk1Alg2(double x, double y, double z, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
-    return (U(x, uData) * U(x, uData) / (T(z, tData) - U(z, uData))) + Qnk1(x, y);
-}
-
-double Rnk1Alg2(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
-    return Qnk1Alg2(x, y, x * y, uData, tData);
-}
-
-double Rnk2Alg2(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
-    return Qnk1(x, y) + Qnk1Alg2(x, y, x * y, uData, tData);
-}
-
-// Алгоритм 3
-double Qnk2(double x, double y) {
-    return x * y * 1.25 + Qnk1(x, y);
-}
-
-double Qqn2(double x, double y) {
-    return 1.3 * x * y - Qqn1(x, y);
-}
-
-double Qnk2Alg3(double x, double y, double z, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
-    return (U(x, uData) * U(x, uData) * 0.9 / (T(z, tData) - U(z, uData))) + Qnk2(x, y);
-}
-
-double Rnk1Alg3(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
-    return Qnk2Alg3(x, y, x * y, uData, tData);
-}
-
-double Rnk2Alg3(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
-    return Qnk2(x, y) + Qnk2Alg3(x, y, x * y, uData, tData);
-}
-
-// Основна функція обчислення
-double compute(double x, double y, double z, const string& text,
-    const vector<pair<double, double>>& uData,
-    const vector<pair<double, double>>& tData,
-    const map<string, double>& textData) {
-
-    double r, k;
-
-    if (uData.empty() || x <= 5) {
-        r = Rnk2(x, y, uData, tData);
-    }
-    else {
-        r = U(x, uData);
+    catch (const exception& e) {
+        cerr << e.what() << endl;
+        // Виклик Алгоритму 2
+        double i = 1;
+        while (i <= 5) {
+            double temp = Rnk2(x, y);
+            cout << "Алгоритм 2, Rnk2: " << temp << endl;
+            i++;
+        }
     }
 
-    if (tData.empty() || x <= 10) {
-        k = Rnk2(x, y, uData, tData);
+    // Обробка файлу dat2.dat
+    try {
+        dat2.open("dat2.dat");
+        if (!dat2.is_open()) throw runtime_error("Could not open dat2.dat");
+
+        double dat2_x, dat2_y, dat2_z;
+        while (dat2 >> dat2_x >> dat2_y >> dat2_z) {
+            double temp = func(dat2_x, dat2_y, dat2_z);
+            cout << "Обробка з dat2.dat, func: " << temp << endl;
+        }
     }
-    else {
-        k = T(x, tData);
+    catch (const exception& e) {
+        cerr << e.what() << endl;
+        // Виклик Алгоритму 3
+        double i = 1;
+        while (i <= 10) {
+            double temp = Rnk(x, y);
+            cout << "Алгоритм 3, Rnk: " << temp << endl;
+            i++;
+        }
     }
 
-    double CText = G(text, textData) + x;
+    // Основні обчислення
+    r = func(x, y, z);
+    k = CText(Max(x, y, z), x + y + z, r, text);
 
-    double variant = r + 1027.0 * k + 8973.0;
-
-    return Max(variant, r + k, z, CText);
-}
-
-int main() {
-    // Зчитування даних з файлів
-    vector<pair<double, double>> uData = readTable("dat1.dat");
-    vector<pair<double, double>> tData = readTable("dat2.dat");
-    map<string, double> textData = readTextTable("dat3.dat");
-
-    double x, y, z;
-    string text;
-
-    // Введення даних
-    cin >> x >> y >> z;
-    cin.ignore();
-    getline(cin, text);
-
-    // Обчислення результату
-    double result = compute(x, y, z, text, uData, tData, textData);
+    // Обчислення Variant(r, k)
+    double result = Variant(r, k);
 
     // Виведення результату
     cout << "Result: " << result << endl;
