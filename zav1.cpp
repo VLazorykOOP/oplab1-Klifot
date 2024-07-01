@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <iomanip>
 #include <exception>
 
 using namespace std;
@@ -108,6 +109,47 @@ double U2(double x, double y) {
     return (U1(x) + y * T(y) - U2(y) * T(x)) / (U1(x) + T(x));
 }
 
+// Custom exception classes
+class ErrorRange {
+    string str = "ErrorRange";
+public:
+    double rd;
+    ErrorRange(double d) : rd(d) { }
+    void Message() const {
+        cout << "ErrorRange: current x is " << rd << " but -10 < x < 10" << endl;
+    }
+};
+
+class ErrorNoFile {
+    string str = "ErrorNoFile";
+public:
+    ErrorNoFile(string s) : str(s) { }
+    void Message() const {
+        cout << "ErrorNoFile: " << str << endl;
+    }
+};
+
+class ErrorKrl {
+    string str = "ErrorKrl";
+protected:
+    double x;
+public:
+    ErrorKrl(double dx) : x(dx) { }
+    virtual void Message() const {
+        cout << "ErrorKrl: " << str << endl;
+    }
+    virtual double setFun() const { return x + 1; }
+};
+
+class ErrorDKrl : public ErrorKrl {
+public:
+    ErrorDKrl(double dx) : ErrorKrl(dx) { }
+    void Message() const override {
+        cout << "ErrorDKrl: derived from ErrorKrl" << endl;
+    }
+    double setFun() const override { return x + 2; }
+};
+
 // Головна функція
 int main() {
     // Ініціалізація змінних
@@ -123,21 +165,23 @@ int main() {
     // Обробка файлу dat1.dat
     try {
         dat1.open("dat1.dat");
-        if (!dat1.is_open()) throw runtime_error("Could not open dat1.dat");
+        if (!dat1.is_open()) throw ErrorNoFile("dat1.dat");
 
         double dat1_x, dat1_y;
-        while (dat1 >> dat1_x >> dat1_y) {
+        int count = 0;
+        while (dat1 >> dat1_x >> dat1_y && count < 5) { // Process only the first 5 lines for example
             double temp = Rnk(dat1_x, dat1_y);
-            cout << "Обробка з dat1.dat, Rnk: " << temp << endl;
+            cout << fixed << setprecision(5) << "Обробка з dat1.dat, Rnk: " << temp << endl;
+            count++;
         }
     }
-    catch (const exception& e) {
-        cerr << e.what() << endl;
+    catch (const ErrorNoFile& e) {
+        e.Message();
         // Виклик Алгоритму 2
         double i = 1;
         while (i <= 5) {
             double temp = Rnk2(x, y);
-            cout << "Алгоритм 2, Rnk2: " << temp << endl;
+            cout << fixed << setprecision(5) << "Алгоритм 2, Rnk2: " << temp << endl;
             i++;
         }
     }
@@ -145,21 +189,23 @@ int main() {
     // Обробка файлу dat2.dat
     try {
         dat2.open("dat2.dat");
-        if (!dat2.is_open()) throw runtime_error("Could not open dat2.dat");
+        if (!dat2.is_open()) throw ErrorNoFile("dat2.dat");
 
         double dat2_x, dat2_y, dat2_z;
-        while (dat2 >> dat2_x >> dat2_y >> dat2_z) {
+        int count = 0;
+        while (dat2 >> dat2_x >> dat2_y >> dat2_z && count < 5) { // Process only the first 5 lines for example
             double temp = func(dat2_x, dat2_y, dat2_z);
-            cout << "Обробка з dat2.dat, func: " << temp << endl;
+            cout << fixed << setprecision(5) << "Обробка з dat2.dat, func: " << temp << endl;
+            count++;
         }
     }
-    catch (const exception& e) {
-        cerr << e.what() << endl;
+    catch (const ErrorNoFile& e) {
+        e.Message();
         // Виклик Алгоритму 3
         double i = 1;
         while (i <= 10) {
             double temp = Rnk(x, y);
-            cout << "Алгоритм 3, Rnk: " << temp << endl;
+            cout << fixed << setprecision(5) << "Алгоритм 3, Rnk: " << temp << endl;
             i++;
         }
     }
@@ -172,7 +218,7 @@ int main() {
     double result = Variant(r, k);
 
     // Виведення результату
-    cout << "Result: " << result << endl;
+    cout << fixed << setprecision(5) << "Result: " << result << endl;
 
     return 0;
 }
