@@ -77,11 +77,54 @@ double Rnk2(double x, double y, const vector<pair<double, double>>& uData, const
     return x * y + U(x, uData) * T(y, tData);
 }
 
+// Алгоритм 2
+double Qnk1(double x, double y) {
+    return x * y;
+}
+
+double Qqn1(double x, double y) {
+    return x - y;
+}
+
+double Qnk1Alg2(double x, double y, double z, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
+    return (U(x, uData) * U(x, uData) / (T(z, tData) - U(z, uData))) + Qnk1(x, y);
+}
+
+double Rnk1Alg2(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
+    return Qnk1Alg2(x, y, x * y, uData, tData);
+}
+
+double Rnk2Alg2(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
+    return Qnk1(x, y) + Qnk1Alg2(x, y, x * y, uData, tData);
+}
+
+// Алгоритм 3
+double Qnk2(double x, double y) {
+    return x * y * 1.25 + Qnk1(x, y);
+}
+
+double Qqn2(double x, double y) {
+    return 1.3 * x * y - Qqn1(x, y);
+}
+
+double Qnk2Alg3(double x, double y, double z, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
+    return (U(x, uData) * U(x, uData) * 0.9 / (T(z, tData) - U(z, uData))) + Qnk2(x, y);
+}
+
+double Rnk1Alg3(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
+    return Qnk2Alg3(x, y, x * y, uData, tData);
+}
+
+double Rnk2Alg3(double x, double y, const vector<pair<double, double>>& uData, const vector<pair<double, double>>& tData) {
+    return Qnk2(x, y) + Qnk2Alg3(x, y, x * y, uData, tData);
+}
+
 // Основна функція обчислення
 double compute(double x, double y, double z, const string& text,
     const vector<pair<double, double>>& uData,
     const vector<pair<double, double>>& tData,
     const map<string, double>& textData) {
+
     double r, k;
 
     if (uData.empty() || x <= 5) {
@@ -100,7 +143,9 @@ double compute(double x, double y, double z, const string& text,
 
     double CText = G(text, textData) + x;
 
-    return Max(r, k, z, CText);
+    double variant = r + 1027.0 * k + 8973.0;
+
+    return Max(variant, r + k, z, CText);
 }
 
 int main() {
